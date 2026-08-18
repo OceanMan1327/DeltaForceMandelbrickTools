@@ -14,7 +14,6 @@ No installation is required. Open the HTML file in a modern browser and use it l
 
 - **More Collections mode**
   - Maximizes the number of items from preferred collections.
-  - Excludes **Medusa**, **Custom Build**, and **Astromancy** from the priority count.
   - Uses the best total float as the tiebreaker.
 
 - **Custom mode**
@@ -129,7 +128,6 @@ The slider can be adjusted anywhere from **8.00** to **23.00**.
 
 Future ideas currently planned:
 
-- Collection priority mode
 - Undo last craft
 - Edit existing skins
 - Timer sound notifications
