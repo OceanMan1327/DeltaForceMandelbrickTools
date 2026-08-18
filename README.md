@@ -37,6 +37,13 @@ No installation is required. Open the HTML file in a modern browser and use it l
   - Duplicate float detection.
   - Import/export inventory as JSON.
 
+- **Collection filter**
+  - Filter the skin list by MandelBrick collection.
+  - The first option is **All skins**, followed by all collections in the built-in order.
+  - Filtering only changes what is displayed on the right side.
+  - Hidden skins remain in the inventory and are still used by automatic craft calculations.
+  - Global float-based numbering (`#1`, `#2`, etc.) is preserved while filtering.
+
 - **Offer timers**
   - Add a timer by collection and skin.
   - Time format: `2 30` = 2 minutes 30 seconds.
