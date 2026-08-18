@@ -1111,6 +1111,7 @@ function renderPriorityCollections(){
 
       if(CRAFT_MODE === 'collections'){
         currentCraft = null;
+        craftHint.style.display = '';
         renderSkins();
         results.innerHTML = '<div class="empty">Priority collections changed. Click “Calculate” to recalculate the craft.</div>';
       }
@@ -1127,6 +1128,7 @@ function setAllPriorityCollections(enabled){
 
   if(CRAFT_MODE === 'collections'){
     currentCraft = null;
+    craftHint.style.display = '';
     renderSkins();
     results.innerHTML = '<div class="empty">Priority collections changed. Click “Calculate” to recalculate the craft.</div>';
   }
@@ -2164,6 +2166,7 @@ targetSlider.addEventListener('input', ()=>{
   TARGET = Number(targetSlider.value);
   targetValue.textContent = TARGET.toFixed(2);
   currentCraft = null;
+  craftHint.style.display = '';
   renderSkins();
   results.innerHTML = '<div class="empty">Limit changed. Click “Calculate” to recalculate the craft.</div>';
 });
@@ -2173,6 +2176,9 @@ document.getElementById('findBtn').addEventListener('click', ()=>{
     renderCustomCraft();
     return;
   }
+
+  craftHint.style.display = 'none';
+
   if(skins.length < REQUIRED){
     results.innerHTML = `<div class="empty">Currently added: ${skins.length}. At least 20 skins are required for a craft.</div>`;
     return;
