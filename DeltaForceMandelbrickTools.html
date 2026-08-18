@@ -171,6 +171,28 @@ body{
   gap:8px;
   align-items:center;
 }
+.skin-header-tools{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:nowrap;
+  min-width:0;
+}
+.skin-filter-wrap{
+  width:190px;
+  min-width:170px;
+  flex:0 0 190px;
+}
+.skin-filter-wrap .custom-select-trigger{
+  height:40px;
+  padding-top:0;
+  padding-bottom:0;
+  display:flex;
+  align-items:center;
+}
+.skin-filter-wrap .custom-select-menu{
+  max-height:310px;
+}
 .icon-action-btn{
   width:40px;
   height:40px;
@@ -607,13 +629,18 @@ button:hover{transform:translateY(-1px)}
 .field input:focus,
 .field select:focus{border-color:var(--accent)}
 
-.field select.native-select-hidden{
-  position:absolute;
-  inset:auto auto auto -99999px;
-  width:1px;
-  height:1px;
-  opacity:0;
-  pointer-events:none;
+.native-select-hidden{
+  position:absolute !important;
+  left:-99999px !important;
+  top:auto !important;
+  width:1px !important;
+  height:1px !important;
+  min-width:0 !important;
+  max-width:none !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
 }
 
 .custom-select{
@@ -675,6 +702,7 @@ button:hover{transform:translateY(-1px)}
   max-height:240px;
   overflow-y:auto;
   overflow-x:hidden;
+  overscroll-behavior:contain;
   z-index:30;
   box-shadow:0 16px 40px rgba(0,0,0,.35);
 }
@@ -859,7 +887,11 @@ button:hover{transform:translateY(-1px)}
         <h2>Skin List <span class="skin-count-badge" id="skinCount">0</span></h2>
         <div class="subtitle">Name and float value of each available item</div>
       </div>
-      <div class="actions skin-actions">
+      <div class="skin-header-tools">
+        <div class="skin-filter-wrap">
+          <select id="skinCollectionFilter" class="native-select-hidden"></select>
+        </div>
+        <div class="actions skin-actions">
         <button class="btn-secondary icon-action-btn" id="loadJsonBtn" title="Import JSON" aria-label="Import JSON">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v11"></path>
@@ -877,6 +909,7 @@ button:hover{transform:translateY(-1px)}
         <button class="btn-secondary" id="duplicateBtn">Check Duplicates</button>
         <button class="btn-secondary" id="clearBtn">Clear</button>
         <button class="btn-primary" id="addBtn">+ Add</button>
+        </div>
       </div>
     </div>
 
@@ -1041,6 +1074,7 @@ skins = sortSkins(skins);
 const skinsWrap = document.getElementById('skinsWrap');
 const results = document.getElementById('results');
 const skinCount = document.getElementById('skinCount');
+const skinCollectionFilter = document.getElementById('skinCollectionFilter');
 const modalBackdrop = document.getElementById('modalBackdrop');
 const collectionSelect = document.getElementById('collectionSelect');
 const skinSelect = document.getElementById('skinSelect');
@@ -1070,6 +1104,12 @@ const timerModalError = document.getElementById('timerModalError');
 
 let offerTimers = JSON.parse(localStorage.getItem('df_mandel_offer_timers') || '[]');
 
+skinCollectionFilter.innerHTML = [
+  '<option value="all">All skins</option>',
+  ...MANDEL_COLLECTIONS.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`)
+].join('');
+
+enhanceCustomSelect(skinCollectionFilter);
 enhanceCustomSelect(collectionSelect);
 enhanceCustomSelect(skinSelect);
 enhanceCustomSelect(timerCollectionSelect);
@@ -1078,6 +1118,7 @@ enhanceCustomSelect(timerSkinSelect);
 let CRAFT_MODE = 'quality';
 let currentCraft = null;
 let customSelectedIds = new Set();
+let SKIN_COLLECTION_FILTER = 'all';
 
 // Default selection preserves the previous More Collections behavior.
 let priorityCollectionIds = new Set(
@@ -1253,9 +1294,20 @@ function renderSkins(){
     return;
   }
 
+  const displayedSkins = SKIN_COLLECTION_FILTER === 'all'
+    ? skins
+    : skins.filter(s => s.collectionId === SKIN_COLLECTION_FILTER);
+
+  if(!displayedSkins.length){
+    skinsWrap.innerHTML = '<div class="empty">No skins in this collection.</div>';
+    return;
+  }
+
   skinsWrap.innerHTML = `
     <div class="skin-list">
-      ${skins.map((s,i)=>`
+      ${displayedSkins.map((s)=>{
+        const i = skins.findIndex(item => item.uid === s.uid);
+        return `
         <div
           class="skin-row ${getCurrentCraftIds().has(s.uid) ? 'craft-selected' : ''} ${CRAFT_MODE === 'custom' ? 'custom-clickable' : ''}"
           ${CRAFT_MODE === 'custom' ? `onclick="toggleCustomSkin('${s.uid}')"` : ''}
@@ -1267,7 +1319,8 @@ function renderSkins(){
           <div class="float">${fmt(s.float)}</div>
           <button class="icon-btn" title="Delete" onclick="event.stopPropagation(); removeSkin(${i})">×</button>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     </div>
   `;
 }
@@ -1362,6 +1415,14 @@ function enhanceCustomSelect(select){
   wrap.appendChild(menu);
   select.insertAdjacentElement('afterend', wrap);
   select._customSelect = wrap;
+
+  menu.addEventListener('wheel', e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Scroll only the dropdown itself. At the top/bottom the page remains fixed.
+    menu.scrollTop += e.deltaY;
+  }, {passive:false});
 
   trigger.addEventListener('click', () => {
     const isOpen = wrap.classList.contains('open');
@@ -1671,6 +1732,11 @@ function checkDuplicates(){
       `).join('')}
     </div>`;
 }
+
+skinCollectionFilter.addEventListener('change', ()=>{
+  SKIN_COLLECTION_FILTER = skinCollectionFilter.value || 'all';
+  renderSkins();
+});
 
 document.getElementById('addTimerBtn').addEventListener('click', openTimerModal);
 document.getElementById('timerCancelBtn').addEventListener('click', closeTimerModal);
