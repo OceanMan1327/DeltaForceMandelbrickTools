@@ -1,0 +1,2036 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delta Force — MandelBrick Craft Optimizer v1.1</title>
+<style>
+:root{
+  --bg:#101215;
+  --panel:#171a1f;
+  --panel2:#1e2229;
+  --border:#2c323b;
+  --text:#f2f4f7;
+  --muted:#949ba7;
+  --accent:#FB5E0F;
+  --accent2:#FF7A2F;
+  --danger:#FF3B3B;
+  --good:#FB5E0F;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0}
+body{
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.timer-panel{
+  background:#14171b;
+  border-bottom:1px solid var(--border);
+  padding:16px 22px 18px;
+}
+.timer-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:12px;
+}
+.timer-panel-title{
+  font-size:19px;
+  font-weight:800;
+}
+.timer-panel-subtitle{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+.timer-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+.timer-empty{
+  grid-column:1/-1;
+  padding:16px;
+  color:var(--muted);
+  border:1px dashed #373e48;
+  border-radius:10px;
+  text-align:center;
+  font-size:13px;
+}
+.timer-card{
+  position:relative;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:12px 38px 12px 12px;
+  min-width:0;
+  transition:.2s ease;
+}
+.timer-card.warning{
+  border-color:#FF3B3B;
+  box-shadow:0 0 0 1px rgba(255,59,59,.30), 0 0 20px rgba(255,59,59,.12);
+  background:#241719;
+}
+.timer-card.warning .timer-countdown{
+  color:#FF5A5A;
+}
+.timer-collection{
+  color:var(--muted);
+  font-size:11px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.timer-skin{
+  font-weight:800;
+  font-size:13px;
+  margin-top:3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.timer-countdown{
+  margin-top:9px;
+  font-family:Consolas,monospace;
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.timer-remove{
+  position:absolute;
+  right:8px;
+  top:8px;
+  width:27px;
+  height:27px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:#251b1e;
+  color:#ee7c87;
+  border:1px solid #4a3035;
+}
+.app{
+  min-height:calc(100vh - 150px);
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--border);
+}
+.panel{
+  min-width:0;
+  background:var(--panel);
+  display:flex;
+  flex-direction:column;
+}
+.header{
+  padding:20px 22px;
+  min-height:92px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.title-wrap h1,.title-wrap h2{margin:0}
+.title-wrap h1{font-size:21px}
+.title-wrap h2{font-size:19px}
+.subtitle{font-size:13px;color:var(--muted);margin-top:5px}
+.skin-count-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:28px;
+  height:24px;
+  margin-left:8px;
+  padding:0 8px;
+  border-radius:8px;
+  background:rgba(251,94,15,.12);
+  border:1px solid rgba(251,94,15,.28);
+  color:var(--accent2);
+  font-size:13px;
+  font-weight:800;
+  vertical-align:2px;
+}
+.single-stat{
+  display:block;
+  width:100%;
+}
+.single-stat .stat{
+  width:100%;
+  max-width:none;
+}
+.single-stat:has(.target-stat.hidden){
+  display:none;
+}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.skin-actions{
+  flex-wrap:nowrap;
+  gap:8px;
+  align-items:center;
+}
+.icon-action-btn{
+  width:40px;
+  height:40px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  flex:0 0 40px;
+}
+.icon-action-btn svg{
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+button{
+  border:0;
+  border-radius:9px;
+  padding:10px 15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.15s ease;
+}
+button:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--accent);color:#17120a}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:#292e36;color:var(--text);border:1px solid #363d47}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid #5a3339}
+.content{padding:18px 22px;overflow:auto;flex:1}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:15px;
+}
+.stats.single-stat{
+  grid-template-columns:1fr;
+  width:100%;
+}
+.stats.single-stat .target-stat{
+  width:100%;
+  max-width:none;
+}
+.stat{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:12px;
+  min-height:88px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+}
+.stat .label{font-size:12px;color:var(--muted)}
+.stat .value{font-size:20px;font-weight:800;margin-top:4px}
+.target-stat{min-width:0}
+.target-head-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.target-step-controls{
+  display:flex;
+  gap:6px;
+  margin-top:1px;
+}
+.target-step-btn{
+  width:34px;
+  height:30px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:#292e36;
+  color:var(--text);
+  border:1px solid #363d47;
+  font-size:13px;
+  line-height:1;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+.target-step-btn:hover{
+  background:#333943;
+  border-color:#4a525f;
+  color:var(--accent2);
+}
+.target-step-btn:active{
+  transform:none;
+  background:rgba(251,94,15,.14);
+  border-color:rgba(251,94,15,.45);
+}
+.chevron{
+  width:8px;
+  height:8px;
+  display:block;
+  border-top:2px solid currentColor;
+  border-right:2px solid currentColor;
+}
+.chevron-left{
+  transform:rotate(-135deg);
+  margin-left:3px;
+}
+.chevron-right{
+  transform:rotate(45deg);
+  margin-right:3px;
+}
+.target-slider{
+  width:100%;
+  margin-top:10px;
+  accent-color:var(--accent);
+  cursor:pointer;
+}
+.mode-box{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+.mode-option{
+  flex:1 1 220px;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:12px 13px;
+  cursor:pointer;
+}
+.mode-option input{
+  margin-top:3px;
+  accent-color:var(--accent);
+}
+.mode-title{font-weight:800;font-size:14px}
+.mode-desc{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.4}
+.target-stat.hidden{display:none}
+.skin-row.custom-clickable{cursor:pointer}
+.skin-row.custom-clickable:hover{
+  background:rgba(255,255,255,.025);
+}
+.skin-row.custom-clickable.craft-selected:hover{
+  background:linear-gradient(90deg,rgba(251,94,15,.14),rgba(251,94,15,.05));
+  border-color:rgba(251,94,15,.34);
+}
+.hint{
+  border:1px dashed #3b424d;
+  background:#15181d;
+  color:var(--muted);
+  border-radius:11px;
+  padding:14px;
+  font-size:13px;
+  line-height:1.5;
+  margin-bottom:15px;
+}
+.craft-card{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.craft-head{
+  padding:13px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+}
+.craft-name{font-weight:800}
+.craft-sum{font-weight:900;color:var(--good)}
+.craft-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.craft-items{padding:8px 14px 12px}
+.craft-row,.skin-row{
+  display:grid;
+  grid-template-columns:1fr 150px 42px;
+  gap:10px;
+  align-items:center;
+  padding:9px 0;
+  border-bottom:1px solid #292e35;
+}
+.skin-row{
+  position:relative;
+}
+.craft-row{grid-template-columns:32px 1fr 120px}
+.craft-row:last-child,.skin-row:last-child{border-bottom:0}
+.num{font-size:12px;color:var(--muted)}
+.float{
+  font-family:Consolas,monospace;
+  text-align:right;
+  color:#e8ebef;
+}
+.empty{
+  padding:38px 20px;
+  text-align:center;
+  color:var(--muted);
+  border:1px dashed #373e48;
+  border-radius:12px;
+}
+.duplicate-box{
+  position:relative;
+  background:#211b1d;
+  border:1px solid #58363d;
+  border-radius:11px;
+  padding:13px 44px 13px 14px;
+  margin-bottom:14px;
+}
+.duplicate-close{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:28px;
+  height:28px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.04);
+  color:var(--muted);
+  border:1px solid rgba(255,255,255,.08);
+}
+.duplicate-close:hover{
+  color:var(--text);
+  background:rgba(255,255,255,.08);
+}
+.duplicate-close .close-x{
+  position:relative;
+  width:12px;
+  height:12px;
+}
+.duplicate-close .close-x::before,
+.duplicate-close .close-x::after{
+  content:"";
+  position:absolute;
+  left:5px;
+  top:0;
+  width:2px;
+  height:12px;
+  background:currentColor;
+  border-radius:2px;
+}
+.duplicate-close .close-x::before{transform:rotate(45deg)}
+.duplicate-close .close-x::after{transform:rotate(-45deg)}
+.duplicate-box.good{
+  background:#18231e;
+  border-color:#315844;
+}
+.duplicate-title{
+  font-weight:800;
+  margin-bottom:8px;
+}
+.duplicate-group{
+  padding:8px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.duplicate-group:first-of-type{border-top:0}
+.duplicate-float{
+  font-family:Consolas,monospace;
+  color:#ffb2b8;
+  font-weight:800;
+  margin-bottom:4px;
+}
+.duplicate-items{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+}
+.skin-list{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:0 14px;
+}
+.skin-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skin-row.craft-selected{
+  margin:6px 0;
+  padding:11px 12px 11px 18px;
+  border:1px solid rgba(251,94,15,.22);
+  border-radius:12px;
+  border-bottom:1px solid rgba(251,94,15,.22);
+  background:linear-gradient(90deg,rgba(251,94,15,.10),rgba(251,94,15,.035));
+  box-shadow:0 8px 20px rgba(0,0,0,.12);
+}
+.skin-row.craft-selected::before{
+  content:"";
+  position:absolute;
+  left:8px;
+  top:8px;
+  bottom:8px;
+  width:6px;
+  background:var(--accent);
+  border-radius:8px;
+}
+.skin-row.craft-selected .skin-name{
+  color:#FF9A63;
+}
+.confirm-wrap{
+  padding:12px 14px 14px;
+  border-top:1px solid var(--border);
+  display:flex;
+  justify-content:flex-end;
+}
+.btn-confirm{
+  background:var(--good);
+  color:#0f1713;
+}
+.btn-confirm:hover{filter:brightness(1.05)}
+.icon-btn{
+  width:34px;height:34px;padding:0;
+  display:grid;place-items:center;
+  border:1px solid #4a3035;
+  background:#251b1e;color:#ee7c87;border-radius:8px;
+}
+.modal-backdrop{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.68);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:100;
+}
+.modal-backdrop.show{display:flex}
+.modal{
+  width:min(430px,100%);
+  background:#1b1f25;
+  border:1px solid #363d47;
+  border-radius:15px;
+  box-shadow:0 20px 70px rgba(0,0,0,.5);
+  padding:20px;
+}
+.modal h3{margin:0 0 16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+.field input,
+.field select{
+  width:100%;
+  background:#111419;
+  color:var(--text);
+  border:1px solid #343a44;
+  border-radius:9px;
+  padding:11px 12px;
+  outline:none;
+}
+.field input:focus,
+.field select:focus{border-color:var(--accent)}
+
+.field select.native-select-hidden{
+  position:absolute;
+  inset:auto auto auto -99999px;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+
+.custom-select{
+  position:relative;
+}
+.custom-select-trigger{
+  width:100%;
+  background:#111419;
+  color:var(--text);
+  border:1px solid #343a44;
+  border-radius:9px;
+  padding:11px 42px 11px 12px;
+  outline:none;
+  text-align:left;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:600;
+  text-transform:none;
+  letter-spacing:0;
+  cursor:pointer;
+  position:relative;
+}
+.custom-select-trigger:hover{
+  transform:none;
+}
+
+.custom-select-trigger::after{
+  content:"";
+  position:absolute;
+  right:14px;
+  top:50%;
+  width:7px;
+  height:7px;
+  border-right:2px solid #c9cdd4;
+  border-bottom:2px solid #c9cdd4;
+  transform:translateY(-60%) rotate(45deg);
+  transition:transform .12s ease;
+}
+.custom-select.open .custom-select-trigger{
+  border-color:var(--accent);
+  border-bottom-left-radius:0;
+  border-bottom-right-radius:0;
+}
+.custom-select.open .custom-select-trigger::after{
+  transform:translateY(-20%) rotate(-135deg);
+}
+
+.custom-select-menu{
+  display:none;
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% - 1px);
+  background:#111419;
+  border:1px solid var(--accent);
+  border-top:none;
+  border-bottom-left-radius:9px;
+  border-bottom-right-radius:9px;
+  max-height:240px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  z-index:30;
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+}
+.custom-select.open .custom-select-menu{
+  display:block;
+}
+.custom-select-option{
+  width:100%;
+  padding:10px 12px;
+  background:transparent;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  color:var(--text);
+  text-align:left;
+  text-transform:none;
+  letter-spacing:0;
+  font-size:14px;
+  font-weight:600;
+}
+.custom-select-option:hover{
+  background:#1a2028;
+  color:var(--text);
+  filter:none;
+}
+.custom-select-option.selected{
+  background:rgba(251,94,15,.18);
+  color:#fff;
+}
+.custom-select-option + .custom-select-option{
+  border-top:1px solid rgba(255,255,255,.04);
+}
+.custom-select-empty{
+  padding:10px 12px;
+  color:var(--muted);
+  font-size:13px;
+}
+.custom-select-menu::-webkit-scrollbar{
+  width:10px;
+}
+.custom-select-menu::-webkit-scrollbar-thumb{
+  background:#323844;
+  border-radius:999px;
+  border:2px solid #111419;
+}
+.custom-select-menu::-webkit-scrollbar-track{
+  background:#111419;
+}
+.collection-note{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:7px;
+  line-height:1.4;
+}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.error{
+  color:#ff8e98;
+  font-size:12px;
+  min-height:17px;
+  margin-top:-5px;
+}
+.badge{
+  display:inline-block;
+  font-size:11px;
+  padding:4px 7px;
+  border-radius:8px;
+  background:#2d323a;
+  color:#afb6c1;
+  margin-left:7px;
+}
+@media(max-width:1200px){
+  .timer-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .timer-panel-head{align-items:flex-start;flex-direction:column}
+  .timer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app{grid-template-columns:1fr;height:auto;min-height:100vh}
+  .panel{min-height:50vh}
+  .stats{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .timer-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section class="timer-panel">
+  <div class="timer-panel-head">
+    <div>
+      <div class="timer-panel-title">Delta Force MandelbrickTools / Offer Timers</div>
+      <div class="timer-panel-subtitle">Track time until an offer becomes available</div>
+    </div>
+    <button class="btn-primary" id="addTimerBtn">+ Add Timer</button>
+  </div>
+  <div class="timer-grid" id="timerGrid">
+    <div class="timer-empty" id="timerEmpty">No active timers.</div>
+  </div>
+</section>
+
+<div class="app">
+  <section class="panel">
+    <div class="header">
+      <div class="title-wrap">
+        <h1>Optimal Crafts</h1>
+        <div class="subtitle">20 skins · total ≤ 8.5 for S · total ≤ 23 for A</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="findBtn">Calculate</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="mode-box">
+        <label class="mode-option">
+          <input type="radio" name="craftMode" value="quality" checked>
+          <div>
+            <div class="mode-title">Best Quality</div>
+            <div class="mode-desc">Get as close as possible to the selected limit.</div>
+          </div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="craftMode" value="collections">
+          <div>
+            <div class="mode-title">More Collections</div>
+            <div class="mode-desc">Maximize items outside Medusa, Custom Build, and Astromancy, then maximize the total.</div>
+          </div>
+        </label>
+
+        <label class="mode-option">
+          <input type="radio" name="craftMode" value="custom">
+          <div>
+            <div class="mode-title">Custom</div>
+            <div class="mode-desc">Manually select up to 20 items by clicking the list on the right.</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="stats single-stat">
+        <div class="stat target-stat" id="targetStat">
+          <div class="target-head-row">
+            <div>
+              <div class="label">Total Limit</div>
+              <div class="value" id="targetValue">8.50</div>
+            </div>
+            <div class="target-step-controls" aria-label="Fine-tune total limit">
+              <button type="button" class="target-step-btn" id="targetMinusBtn" title="Decrease by 0.01" aria-label="Decrease limit"><span class="chevron chevron-left"></span></button>
+              <button type="button" class="target-step-btn" id="targetPlusBtn" title="Increase by 0.01" aria-label="Increase limit"><span class="chevron chevron-right"></span></button>
+            </div>
+          </div>
+          <input id="targetSlider" class="target-slider" type="range" min="8" max="23" step="0.01" value="8.50">
+        </div>
+      </div>
+
+      <div class="hint" id="craftHint">
+        Click <b>“Calculate”</b> and the tool will find exactly 20 skins with the highest possible total float without exceeding the selected limit.
+      </div>
+
+      <div id="results">
+        <div class="empty">Add at least 20 skins on the right.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="header">
+      <div class="title-wrap">
+        <h2>Skin List <span class="skin-count-badge" id="skinCount">0</span></h2>
+        <div class="subtitle">Name and float value of each available item</div>
+      </div>
+      <div class="actions skin-actions">
+        <button class="btn-secondary icon-action-btn" id="loadJsonBtn" title="Import JSON" aria-label="Import JSON">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v11"></path>
+            <path d="M8 10l4 4 4-4"></path>
+            <path d="M5 17v3h14v-3"></path>
+          </svg>
+        </button>
+        <button class="btn-secondary icon-action-btn" id="saveJsonBtn" title="Export JSON" aria-label="Export JSON">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21V10"></path>
+            <path d="M8 14l4-4 4 4"></path>
+            <path d="M5 7V4h14v3"></path>
+          </svg>
+        </button>
+        <button class="btn-secondary" id="duplicateBtn">Check Duplicates</button>
+        <button class="btn-secondary" id="clearBtn">Clear</button>
+        <button class="btn-primary" id="addBtn">+ Add</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="duplicateResults"></div>
+      <div id="skinsWrap"></div>
+    </div>
+  </section>
+</div>
+
+<input type="file" id="jsonFileInput" accept=".json,application/json" hidden>
+
+<div class="modal-backdrop" id="timerModalBackdrop">
+  <div class="modal">
+    <h3>Add Offer Timer</h3>
+
+    <div class="field">
+      <label for="timerCollectionSelect">MandelBrick Collection</label>
+      <select id="timerCollectionSelect"></select>
+      <div class="collection-note" id="timerCollectionNote"></div>
+    </div>
+
+    <div class="field">
+      <label for="timerSkinSelect">Skin</label>
+      <select id="timerSkinSelect"></select>
+    </div>
+
+    <div class="field">
+      <label for="timerInput">Time (minutes seconds)</label>
+      <input id="timerInput" type="text" inputmode="numeric" placeholder="Example: 2 30">
+      <div class="collection-note">Example: <b>2 30</b> = 2 minutes 30 seconds.</div>
+    </div>
+
+    <div class="error" id="timerModalError"></div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="timerCancelBtn">Cancel</button>
+      <button class="btn-primary" id="timerSaveBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Add Skin</h3>
+
+    <div class="field">
+      <label for="collectionSelect">MandelBrick Collection</label>
+      <select id="collectionSelect"></select>
+      <div class="collection-note" id="collectionNote"></div>
+    </div>
+
+    <div class="field">
+      <label for="skinSelect">Purple Skin</label>
+      <select id="skinSelect"></select>
+    </div>
+
+    <div class="field">
+      <label for="skinFloat">Float / Quality</label>
+      <input id="skinFloat" type="text" inputmode="decimal" placeholder="Example: 0.4231">
+    </div>
+
+    <div class="error" id="modalError"></div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelBtn">Cancel</button>
+      <button class="btn-primary" id="saveBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let TARGET = 8.5;
+const REQUIRED = 20;
+
+// Float values are converted to 0.000000001 units for 9-decimal precision.
+const SCALE = 1000000000;
+
+const MANDEL_COLLECTIONS = [
+  {
+    id:'spectrum-blitz',
+    name:'Spectrum Blitz',
+    result:'M4A1 — Spectrum Blitz',
+    skins:['ASh-12 — Hurricane','SMG-45 — Hurricane','M870 — Hurricane']
+  },
+  {
+    id:'medusa',
+    name:'Medusa',
+    result:'Vector — Medusa',
+    skins:['P90 — Dark Raven','K416 — Dark Raven','M1014 — Dark Raven']
+  },
+  {
+    id:'custom-build',
+    name:'Custom Build',
+    result:'SCAR-H — Custom Build',
+    skins:['M1014 — Elusive','K416 — Elusive','Vector — Elusive']
+  },
+  {
+    id:'fated-trigger',
+    name:'Fated Trigger',
+    result:'K416 — Destined Draw / QBZ95-1 — Ante Up',
+    skins:['AK-12 — Prototype','MP7 — Prototype','PSG-1 — Prototype']
+  },
+  {
+    id:'meteorology',
+    name:'Meteorology',
+    result:'AUG — Meteorology / CI-19 — Meteorology',
+    skins:['K437 — Bespoke Design','Vityaz — Bespoke Design','AWM — Bespoke Design']
+  },
+  {
+    id:'spectrum-blitz-2',
+    name:'Spectrum Blitz 2',
+    result:'M7 — Spectrum Blitz S2',
+    skins:['AUG — Mandate of Heaven','P90 — Mandate of Heaven','SR-25 — Mandate of Heaven']
+  },
+  {
+    id:'most-wanted',
+    name:'Most Wanted',
+    result:'AS Val — Most Wanted',
+    skins:['KC-17 — Operation Shatter','ASh-12 — Operation Shatter','PTR-32 — Operation Shatter']
+  },
+  {
+    id:'custom-build-s2',
+    name:'Custom Build S2',
+    result:'M250 — Custom Build S2 / MP7 — Custom Build S2',
+    skins:['CI-19 — Sublime Sandalwood','Vityaz — Sublime Sandalwood','SVD — Sublime Sandalwood']
+  },
+  {
+    id:'automata',
+    name:'Automata',
+    result:'KC-17 — Automata',
+    skins:['725 — Fun ’n’ Games','G3 — Fun ’n’ Games','KC-17 — Fun ’n’ Games']
+  },
+  {
+    id:'astromancy',
+    name:'Astromancy',
+    result:'AKM — Astromancy',
+    skins:['QCQ171 — Sea Tale','QJB201 — Sea Tale','PSG-1 — Sea Tale']
+  }
+];
+
+let skins = JSON.parse(localStorage.getItem('df_mandel_skins') || '[]');
+skins = skins.map((s,i)=>({
+  ...s,
+  uid: s.uid || `skin_${Date.now()}_${i}_${Math.random().toString(36).slice(2)}`
+}));
+
+skins = skins.map(s => {
+  if (s.collectionId === 'project-prism' || s.collection === 'Project Prism') {
+    return {
+      ...s,
+      collectionId: 'spectrum-blitz',
+      collection: 'Spectrum Blitz',
+      craftResult: 'M4A1 — Spectrum Blitz'
+    };
+  }
+  return s;
+});
+
+skins = sortSkins(skins);
+
+const skinsWrap = document.getElementById('skinsWrap');
+const results = document.getElementById('results');
+const skinCount = document.getElementById('skinCount');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const collectionSelect = document.getElementById('collectionSelect');
+const skinSelect = document.getElementById('skinSelect');
+const collectionNote = document.getElementById('collectionNote');
+const skinFloat = document.getElementById('skinFloat');
+const modalError = document.getElementById('modalError');
+const targetSlider = document.getElementById('targetSlider');
+const targetValue = document.getElementById('targetValue');
+const targetStat = document.getElementById('targetStat');
+const craftHint = document.getElementById('craftHint');
+const targetMinusBtn = document.getElementById('targetMinusBtn');
+const targetPlusBtn = document.getElementById('targetPlusBtn');
+const duplicateResults = document.getElementById('duplicateResults');
+
+const timerGrid = document.getElementById('timerGrid');
+const timerEmpty = document.getElementById('timerEmpty');
+const timerModalBackdrop = document.getElementById('timerModalBackdrop');
+const timerCollectionSelect = document.getElementById('timerCollectionSelect');
+const timerSkinSelect = document.getElementById('timerSkinSelect');
+const timerCollectionNote = document.getElementById('timerCollectionNote');
+const timerInput = document.getElementById('timerInput');
+const timerModalError = document.getElementById('timerModalError');
+
+let offerTimers = JSON.parse(localStorage.getItem('df_mandel_offer_timers') || '[]');
+
+enhanceCustomSelect(collectionSelect);
+enhanceCustomSelect(skinSelect);
+enhanceCustomSelect(timerCollectionSelect);
+enhanceCustomSelect(timerSkinSelect);
+
+let CRAFT_MODE = 'quality';
+let currentCraft = null;
+let customSelectedIds = new Set();
+const EXCLUDED_COLLECTIONS = new Set(['medusa','custom-build','astromancy']);
+
+function sortSkins(list){
+  return [...list].sort((a,b) => {
+    const fa = Number(a.float);
+    const fb = Number(b.float);
+
+    if(fa !== fb) return fa - fb;
+
+    const nameCmp = String(a.name || '').localeCompare(String(b.name || ''), 'ru');
+    if(nameCmp !== 0) return nameCmp;
+
+    return String(a.uid || '').localeCompare(String(b.uid || ''), 'ru');
+  });
+}
+
+function saveStorage(){
+  localStorage.setItem('df_mandel_skins', JSON.stringify(skins));
+}
+
+
+function exportJson(){
+  const payload = {
+    version: 1,
+    app: 'Delta Force MandelBrick Craft Optimizer',
+    exportedAt: new Date().toISOString(),
+    skins
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(payload, null, 2)],
+    {type:'application/json;charset=utf-8'}
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'skins.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function importJsonFile(file){
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      const list = Array.isArray(parsed) ? parsed : parsed.skins;
+
+      if(!Array.isArray(list)){
+        throw new Error('The JSON file does not contain a skins array.');
+      }
+
+      const normalized = list.map((item, index)=>{
+        const name = String(item.name ?? '').trim();
+        const value = Number(String(item.float ?? '').replace(',', '.'));
+
+        if(!name || !Number.isFinite(value) || value < 0){
+          throw new Error(`Invalid entry #${index + 1}.`);
+        }
+
+        return {
+          uid:item.uid || `skin_${Date.now()}_${index}_${Math.random().toString(36).slice(2)}`,
+          name,
+          float:value,
+          collectionId:item.collectionId || '',
+          collection:item.collection || '',
+          craftResult:item.craftResult || ''
+        };
+      });
+
+      currentCraft = null;
+      customSelectedIds.clear();
+      skins = sortSkins(normalized);
+      saveStorage();
+      renderSkins();
+      duplicateResults.innerHTML = '';
+
+      results.innerHTML =
+        '<div class="empty">Database loaded. Click “Calculate” to find the optimal craft.</div>';
+    }catch(err){
+      alert('Failed to load JSON:\\n' + err.message);
+    }
+  };
+
+  reader.onerror = ()=>{
+    alert('Failed to read the file.');
+  };
+
+  reader.readAsText(file, 'utf-8');
+}
+
+function fmt(v){
+  return Number(v).toFixed(9);
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function getCurrentCraftIds(){
+  if(CRAFT_MODE === 'custom') return new Set(customSelectedIds);
+  return new Set((currentCraft?.items || []).map(s => s.uid));
+}
+
+function renderSkins(){
+  skins = sortSkins(skins);
+  skinCount.textContent = skins.length;
+
+  if(!skins.length){
+    skinsWrap.innerHTML = '<div class="empty">The list is empty.<br>Click “+ Add”.</div>';
+    return;
+  }
+
+  skinsWrap.innerHTML = `
+    <div class="skin-list">
+      ${skins.map((s,i)=>`
+        <div
+          class="skin-row ${getCurrentCraftIds().has(s.uid) ? 'craft-selected' : ''} ${CRAFT_MODE === 'custom' ? 'custom-clickable' : ''}"
+          ${CRAFT_MODE === 'custom' ? `onclick="toggleCustomSkin('${s.uid}')"` : ''}
+        >
+          <div class="skin-name">
+            ${esc(s.name)} <span class="badge">#${i+1}</span>
+            ${s.collection ? `<div class="subtitle">${esc(s.collection)}${s.craftResult ? ` → ${esc(s.craftResult)}` : ''}</div>` : ''}
+          </div>
+          <div class="float">${fmt(s.float)}</div>
+          <button class="icon-btn" title="Delete" onclick="event.stopPropagation(); removeSkin(${i})">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+window.removeSkin = function(i){
+  const removedUid = skins[i]?.uid;
+  currentCraft = null;
+  if(removedUid) customSelectedIds.delete(removedUid);
+  skins.splice(i,1);
+  skins = sortSkins(skins);
+  saveStorage();
+  renderSkins();
+  duplicateResults.innerHTML = '';
+  results.innerHTML = '<div class="empty">Click “Calculate” to recalculate the craft.</div>';
+}
+
+
+function getCollectionWeapons(c){
+  return String(c.result || '')
+    .split(' / ')
+    .map(part => part.split(' — ')[0].trim())
+    .filter(Boolean)
+    .join(' / ');
+}
+
+function getCollectionShortLabel(c){
+  const weapons = getCollectionWeapons(c);
+  return weapons ? `${c.name} (${weapons})` : c.name;
+}
+
+
+function closeAllCustomSelects(exceptSelect=null){
+  document.querySelectorAll('.custom-select.open').forEach(node => {
+    if(exceptSelect && node === exceptSelect._customSelect) return;
+    node.classList.remove('open');
+  });
+}
+
+function getCustomSelectTrigger(select){
+  return select?._customSelect?.querySelector('.custom-select-trigger') || null;
+}
+
+function refreshCustomSelect(select){
+  if(!select._customSelect) return;
+
+  const trigger = select._customSelect.querySelector('.custom-select-trigger');
+  const menu = select._customSelect.querySelector('.custom-select-menu');
+
+  const selectedOption = select.options[select.selectedIndex];
+  trigger.textContent = selectedOption ? selectedOption.textContent : 'Select a value';
+
+  if(!select.options.length){
+    menu.innerHTML = '<div class="custom-select-empty">No available options</div>';
+    return;
+  }
+
+  menu.innerHTML = Array.from(select.options).map(opt => `
+    <button
+      type="button"
+      class="custom-select-option ${opt.value === select.value ? 'selected' : ''}"
+      data-value="${esc(opt.value)}"
+    >${esc(opt.textContent)}</button>
+  `).join('');
+
+  menu.querySelectorAll('.custom-select-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      select.value = btn.dataset.value;
+      refreshCustomSelect(select);
+      select.dispatchEvent(new Event('change', {bubbles:true}));
+      select._customSelect.classList.remove('open');
+      getCustomSelectTrigger(select)?.focus();
+    });
+  });
+}
+
+function enhanceCustomSelect(select){
+  if(select._customSelect) return select._customSelect;
+
+  select.classList.add('native-select-hidden');
+
+  const wrap = document.createElement('div');
+  wrap.className = 'custom-select';
+
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'custom-select-trigger';
+
+  const menu = document.createElement('div');
+  menu.className = 'custom-select-menu';
+
+  wrap.appendChild(trigger);
+  wrap.appendChild(menu);
+  select.insertAdjacentElement('afterend', wrap);
+  select._customSelect = wrap;
+
+  trigger.addEventListener('click', () => {
+    const isOpen = wrap.classList.contains('open');
+    closeAllCustomSelects(isOpen ? null : select);
+    wrap.classList.toggle('open', !isOpen);
+  });
+
+  trigger.addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      if(!wrap.classList.contains('open')){
+        closeAllCustomSelects(select);
+        wrap.classList.add('open');
+      }
+    }
+    if(e.key === 'Escape'){
+      wrap.classList.remove('open');
+    }
+  });
+
+  refreshCustomSelect(select);
+  return wrap;
+}
+
+document.addEventListener('click', e => {
+  if(!e.target.closest('.custom-select')){
+    closeAllCustomSelects();
+  }
+});
+
+function saveTimers(){
+  localStorage.setItem('df_mandel_offer_timers', JSON.stringify(offerTimers));
+}
+
+function populateTimerCollections(){
+  timerCollectionSelect.innerHTML = MANDEL_COLLECTIONS.map(c =>
+    `<option value="${c.id}">${esc(getCollectionShortLabel(c))}</option>`
+  ).join('');
+  refreshCustomSelect(timerCollectionSelect);
+  populateTimerSkins();
+}
+
+function populateTimerSkins(){
+  const c = MANDEL_COLLECTIONS.find(x=>x.id === timerCollectionSelect.value) || MANDEL_COLLECTIONS[0];
+  if(!c){
+    timerSkinSelect.innerHTML = '';
+    timerCollectionNote.textContent = '';
+    return;
+  }
+  timerSkinSelect.innerHTML = c.skins.map(name =>
+    `<option value="${esc(name)}">${esc(name)}</option>`
+  ).join('');
+  refreshCustomSelect(timerSkinSelect);
+  timerCollectionNote.textContent = `Collection weapon: ${getCollectionWeapons(c)}`;
+}
+
+function openTimerModal(){
+  timerModalError.textContent = '';
+  timerInput.value = '';
+  populateTimerCollections();
+  timerModalBackdrop.classList.add('show');
+  setTimeout(()=>getCustomSelectTrigger(timerCollectionSelect)?.focus(),0);
+}
+
+function closeTimerModal(){
+  timerModalBackdrop.classList.remove('show');
+}
+
+function parseTimerInput(raw){
+  const parts = raw.trim().split(/\s+/).filter(Boolean);
+  if(parts.length !== 2) return null;
+
+  const minutes = Number(parts[0]);
+  const seconds = Number(parts[1]);
+
+  if(!Number.isInteger(minutes) || !Number.isInteger(seconds)) return null;
+  if(minutes < 0 || seconds < 0 || seconds > 59) return null;
+
+  const total = minutes * 60 + seconds;
+  return total > 0 ? total : null;
+}
+
+function addOfferTimer(){
+  const collection = MANDEL_COLLECTIONS.find(x=>x.id === timerCollectionSelect.value);
+  const skin = timerSkinSelect.value;
+  const totalSeconds = parseTimerInput(timerInput.value);
+
+  if(!collection || !skin){
+    timerModalError.textContent = 'Select a collection and a skin.';
+    return;
+  }
+  if(totalSeconds === null){
+    timerModalError.textContent = 'Enter time as “minutes seconds”, for example 2 30.';
+    return;
+  }
+
+  offerTimers.push({
+    id: Date.now() + Math.random(),
+    collectionId: collection.id,
+    collection: collection.name,
+    skin,
+    endAt: Date.now() + totalSeconds * 1000
+  });
+
+  offerTimers.sort((a,b) => a.endAt - b.endAt);
+  saveTimers();
+  renderTimers();
+  closeTimerModal();
+}
+
+function removeOfferTimer(id){
+  offerTimers = offerTimers.filter(t => t.id !== id);
+  saveTimers();
+  renderTimers();
+}
+
+function formatCountdown(ms){
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2,'0')}`;
+}
+
+function renderTimers(){
+  const now = Date.now();
+  const active = offerTimers
+    .filter(t => t.endAt > now)
+    .sort((a,b) => a.endAt - b.endAt);
+
+  if(
+    active.length !== offerTimers.length ||
+    active.some((t,i) => offerTimers[i]?.id !== t.id)
+  ){
+    offerTimers = active;
+    saveTimers();
+  } else {
+    offerTimers = active;
+  }
+
+  if(!offerTimers.length){
+    timerGrid.innerHTML = '<div class="timer-empty">No active timers.</div>';
+    return;
+  }
+
+  timerGrid.innerHTML = offerTimers.map(t => {
+    const remaining = t.endAt - now;
+    const warning = remaining <= 45000;
+    return `
+      <div class="timer-card ${warning ? 'warning' : ''}" data-timer-id="${t.id}">
+        <button class="timer-remove" title="Delete Timer" onclick="removeOfferTimer(${t.id})">×</button>
+        <div class="timer-collection">${esc(t.collection)}</div>
+        <div class="timer-skin">${esc(t.skin)}</div>
+        <div class="timer-countdown">${formatCountdown(remaining)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.removeOfferTimer = removeOfferTimer;
+
+function tickTimers(){
+  const now = Date.now();
+  let changed = false;
+
+  offerTimers = offerTimers.filter(t => {
+    if(t.endAt <= now){
+      changed = true;
+      return false;
+    }
+    return true;
+  });
+
+  if(changed){
+    saveTimers();
+    renderTimers();
+    return;
+  }
+
+  document.querySelectorAll('.timer-card').forEach(card => {
+    const id = Number(card.dataset.timerId);
+    const timer = offerTimers.find(t => t.id === id);
+    if(!timer) return;
+
+    const remaining = timer.endAt - now;
+    const countdown = card.querySelector('.timer-countdown');
+    if(countdown) countdown.textContent = formatCountdown(remaining);
+
+    if(remaining <= 45000) card.classList.add('warning');
+    else card.classList.remove('warning');
+  });
+}
+
+function populateCollections(){
+  collectionSelect.innerHTML = MANDEL_COLLECTIONS.map(c =>
+    `<option value="${c.id}">${esc(getCollectionShortLabel(c))}</option>`
+  ).join('');
+  refreshCustomSelect(collectionSelect);
+  populateSkinOptions();
+}
+
+function populateSkinOptions(){
+  const c = MANDEL_COLLECTIONS.find(x=>x.id === collectionSelect.value) || MANDEL_COLLECTIONS[0];
+  skinSelect.innerHTML = c.skins.map(name =>
+    `<option value="${esc(name)}">${esc(name)}</option>`
+  ).join('');
+  refreshCustomSelect(skinSelect);
+  collectionNote.textContent = `Collection weapon: ${getCollectionWeapons(c)}`;
+}
+
+function openModal(){
+  modalError.textContent = '';
+  skinFloat.value = '';
+  populateCollections();
+  modalBackdrop.classList.add('show');
+  setTimeout(()=>getCustomSelectTrigger(collectionSelect)?.focus(),0);
+}
+
+function closeModal(){
+  modalBackdrop.classList.remove('show');
+}
+
+function addSkin(){
+  const collection = MANDEL_COLLECTIONS.find(x=>x.id === collectionSelect.value);
+  const name = skinSelect.value;
+  const raw = skinFloat.value.trim().replace(',', '.');
+  const value = Number(raw);
+
+  if(!collection || !name){
+    modalError.textContent = 'Select a collection and a skin.';
+    return;
+  }
+  if(!Number.isFinite(value) || value < 0){
+    modalError.textContent = 'Enter a valid float value.';
+    return;
+  }
+  if(value > 23){
+    modalError.textContent = 'A single item float cannot be greater than 23.';
+    return;
+  }
+
+  skins.push({
+    uid:`skin_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    name,
+    float:value,
+    collectionId:collection.id,
+    collection:collection.name,
+    craftResult:collection.result
+  });
+  saveStorage();
+  if(CRAFT_MODE === 'custom') renderCustomCraft();
+  else renderSkins();
+  duplicateResults.innerHTML = '';
+  closeModal();
+}
+
+
+function closeDuplicateResults(){
+  duplicateResults.innerHTML = '';
+}
+
+window.closeDuplicateResults = closeDuplicateResults;
+
+function checkDuplicates(){
+  if(!skins.length){
+    duplicateResults.innerHTML = `
+      <div class="duplicate-box">
+        <div class="duplicate-title">List is empty</div>
+        <div class="duplicate-items">Add some skins first.</div>
+      </div>`;
+    return;
+  }
+
+  const groups = new Map();
+
+  skins.forEach((s, index)=>{
+    const key = Number(s.float).toFixed(9);
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({...s, index});
+  });
+
+  const duplicates = Array.from(groups.entries())
+    .filter(([,items]) => items.length > 1)
+    .sort((a,b) => Number(a[0]) - Number(b[0]));
+
+  if(!duplicates.length){
+    duplicateResults.innerHTML = `
+      <div class="duplicate-box good">
+        <button class="duplicate-close" type="button" title="Close" aria-label="Close Result" onclick="closeDuplicateResults()">
+          <span class="close-x"></span>
+        </button>
+        <div class="duplicate-title">No duplicates found</div>
+        <div class="duplicate-items">All float values are unique to 9 decimal places.</div>
+      </div>`;
+    return;
+  }
+
+  duplicateResults.innerHTML = `
+    <div class="duplicate-box">
+      <div class="duplicate-title">Duplicate groups found: ${duplicates.length}</div>
+      ${duplicates.map(([float, items]) => `
+        <div class="duplicate-group">
+          <div class="duplicate-float">${float}</div>
+          <div class="duplicate-items">
+            ${items.map(s => `${esc(s.name)}${s.collection ? ` — ${esc(s.collection)}` : ''} (#${s.index + 1})`).join('<br>')}
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+document.getElementById('addTimerBtn').addEventListener('click', openTimerModal);
+document.getElementById('timerCancelBtn').addEventListener('click', closeTimerModal);
+document.getElementById('timerSaveBtn').addEventListener('click', addOfferTimer);
+timerCollectionSelect.addEventListener('change', populateTimerSkins);
+
+timerModalBackdrop.addEventListener('click', e=>{
+  if(e.target === timerModalBackdrop) closeTimerModal();
+});
+
+document.getElementById('addBtn').addEventListener('click', openModal);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('saveBtn').addEventListener('click', addSkin);
+collectionSelect.addEventListener('change', populateSkinOptions);
+
+document.getElementById('saveJsonBtn').addEventListener('click', exportJson);
+document.getElementById('duplicateBtn').addEventListener('click', checkDuplicates);
+
+document.getElementById('loadJsonBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('jsonFileInput');
+  input.value = '';
+  input.click();
+});
+
+document.getElementById('jsonFileInput').addEventListener('change', e=>{
+  importJsonFile(e.target.files?.[0]);
+});
+
+modalBackdrop.addEventListener('click', e=>{
+  if(e.target === modalBackdrop) closeModal();
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){
+    closeModal();
+    closeTimerModal();
+  }
+  if(e.key === 'Enter' && timerModalBackdrop.classList.contains('show')){
+    addOfferTimer();
+    return;
+  }
+  if(e.key === 'Enter' && modalBackdrop.classList.contains('show')) addSkin();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!skins.length) return;
+  if(confirm('Delete the entire skin list?')){
+    currentCraft = null;
+    customSelectedIds.clear();
+    skins = [];
+    saveStorage();
+    renderSkins();
+    duplicateResults.innerHTML = '';
+    results.innerHTML = '<div class="empty">Add at least 20 skins on the right.</div>';
+  }
+});
+
+// Exact meet-in-the-middle solver for exactly 20 items.
+// "quality": maximize total float under the limit.
+// "collections": maximize preferred items first, then maximize total float.
+function findBestCraft(items){
+  if(items.length < REQUIRED) return null;
+
+  const targetUnits = BigInt(Math.round(TARGET * SCALE));
+  const units = items.map(item => BigInt(Math.round(item.float * SCALE)));
+  const preferred = items.map(item => EXCLUDED_COLLECTIONS.has(item.collectionId || '') ? 0 : 1);
+
+  const mid = Math.floor(items.length / 2);
+  const leftIdx = Array.from({length: mid}, (_,i)=>i);
+  const rightIdx = Array.from({length: items.length - mid}, (_,i)=>mid+i);
+
+  function generateSubsets(indices){
+    const groups = Array.from({length: REQUIRED + 1}, ()=>[]);
+    const n = indices.length;
+    const total = 1 << n;
+
+    for(let mask=0; mask<total; mask++){
+      let count = 0;
+      let sum = 0n;
+      let preferredCount = 0;
+
+      for(let b=0; b<n; b++){
+        if(mask & (1 << b)){
+          count++;
+          if(count > REQUIRED) break;
+          const idx = indices[b];
+          sum += units[idx];
+          preferredCount += preferred[idx];
+          if(sum > targetUnits) break;
+        }
+      }
+
+      if(count <= REQUIRED && sum <= targetUnits){
+        groups[count].push({sum, mask, preferredCount});
+      }
+    }
+    return groups;
+  }
+
+  const leftGroups = generateSubsets(leftIdx);
+  const rightGroups = generateSubsets(rightIdx);
+  const rightBuckets = Array.from({length: REQUIRED + 1}, ()=>new Map());
+
+  for(let c=0; c<=REQUIRED; c++){
+    rightGroups[c].sort((a,b)=> a.sum < b.sum ? -1 : a.sum > b.sum ? 1 : 0);
+
+    for(const r of rightGroups[c]){
+      if(!rightBuckets[c].has(r.preferredCount)){
+        rightBuckets[c].set(r.preferredCount, []);
+      }
+      rightBuckets[c].get(r.preferredCount).push(r);
+    }
+    for(const arr of rightBuckets[c].values()){
+      arr.sort((a,b)=> a.sum < b.sum ? -1 : a.sum > b.sum ? 1 : 0);
+    }
+  }
+
+  function upperBound(arr, limit){
+    let lo = 0, hi = arr.length;
+    while(lo < hi){
+      const m = (lo + hi) >> 1;
+      if(arr[m].sum <= limit) lo = m + 1;
+      else hi = m;
+    }
+    return lo - 1;
+  }
+
+  let bestSum = -1n;
+  let bestPreferred = -1;
+  let bestLeft = null;
+  let bestRight = null;
+
+  const minLeftCount = Math.max(0, REQUIRED - rightIdx.length);
+  const maxLeftCount = Math.min(REQUIRED, leftIdx.length);
+
+  for(let lc=minLeftCount; lc<=maxLeftCount; lc++){
+    const rc = REQUIRED - lc;
+    if(rc < 0 || rc > rightIdx.length) continue;
+
+    const L = leftGroups[lc];
+    const R = rightGroups[rc];
+    if(!L.length || !R.length) continue;
+
+    for(const left of L){
+      const remaining = targetUnits - left.sum;
+      if(remaining < 0n) continue;
+
+      if(CRAFT_MODE === 'quality'){
+        const pos = upperBound(R, remaining);
+        if(pos < 0) continue;
+        const right = R[pos];
+        const total = left.sum + right.sum;
+
+        if(total > bestSum){
+          bestSum = total;
+          bestLeft = left;
+          bestRight = right;
+          bestPreferred = left.preferredCount + right.preferredCount;
+          if(bestSum === targetUnits) break;
+        }
+      } else {
+        for(const [rpref, arr] of rightBuckets[rc].entries()){
+          const totalPreferred = left.preferredCount + Number(rpref);
+          if(totalPreferred < bestPreferred) continue;
+
+          const pos = upperBound(arr, remaining);
+          if(pos < 0) continue;
+          const right = arr[pos];
+          const total = left.sum + right.sum;
+
+          if(
+            totalPreferred > bestPreferred ||
+            (totalPreferred === bestPreferred && total > bestSum)
+          ){
+            bestPreferred = totalPreferred;
+            bestSum = total;
+            bestLeft = left;
+            bestRight = right;
+          }
+        }
+      }
+    }
+
+    if(CRAFT_MODE === 'quality' && bestSum === targetUnits) break;
+  }
+
+  if(bestSum < 0n) return null;
+
+  const chosen = [];
+  if(bestLeft){
+    for(let b=0; b<leftIdx.length; b++){
+      if(bestLeft.mask & (1 << b)) chosen.push(items[leftIdx[b]]);
+    }
+  }
+  if(bestRight){
+    for(let b=0; b<rightIdx.length; b++){
+      if(bestRight.mask & (1 << b)) chosen.push(items[rightIdx[b]]);
+    }
+  }
+
+  return {
+    items: chosen,
+    sum: chosen.reduce((a,b)=>a+b.float,0),
+    quantizedSum: Number(bestSum) / SCALE,
+    preferredCount: chosen.filter(s => !EXCLUDED_COLLECTIONS.has(s.collectionId || '')).length
+  };
+}
+
+function buildCustomCraft(){
+  const chosen = skins.filter(s => customSelectedIds.has(s.uid));
+  return {
+    items: chosen,
+    sum: chosen.reduce((a,b)=>a + Number(b.float), 0),
+    preferredCount: chosen.filter(s => !EXCLUDED_COLLECTIONS.has(s.collectionId || '')).length,
+    custom: true
+  };
+}
+
+function renderCustomCraft(){
+  const craft = buildCustomCraft();
+  currentCraft = craft;
+  renderSkins();
+
+  if(craft.items.length === 0){
+    results.innerHTML = `
+      <div class="empty">
+        Custom mode. Click skins on the right to add them to the craft.<br>
+        Selected: 0 / 20.
+      </div>`;
+    return;
+  }
+
+  const craftChances = new Map();
+  craft.items.forEach(s => {
+    const key = s.craftResult || 'Unknown craft';
+    craftChances.set(key, (craftChances.get(key) || 0) + 1);
+  });
+
+  const chanceHtml = Array.from(craftChances.entries())
+    .sort((a,b)=>b[1]-a[1])
+    .map(([name,count]) => `
+      <div class="stat">
+        <div class="label">${esc(name)}</div>
+        <div class="value">${(count / REQUIRED * 100).toFixed(0)}%</div>
+        <div class="craft-meta">${count} of ${REQUIRED} items</div>
+      </div>
+    `).join('');
+
+  results.innerHTML = `
+    ${chanceHtml ? `
+      <div class="stats" style="grid-template-columns:repeat(${Math.min(craftChances.size,3)},1fr)">
+        ${chanceHtml}
+      </div>
+    ` : ''}
+
+    <div class="craft-card">
+      <div class="craft-head">
+        <div>
+          <div class="craft-name">Custom Craft</div>
+          <div class="craft-meta">Selected: ${craft.items.length} / 20 items</div>
+        </div>
+        <div class="craft-sum">${craft.sum.toFixed(9)}</div>
+      </div>
+
+      <div class="craft-items">
+        ${craft.items.map((s,i)=>`
+          <div class="craft-row" style="grid-template-columns:32px 1fr 1fr 150px">
+            <div class="num">${i+1}</div>
+            <div>${esc(s.name)}</div>
+            <div>
+              <div>${esc(s.craftResult || '—')}</div>
+              ${s.collection ? `<div class="subtitle">${esc(s.collection)}</div>` : ''}
+            </div>
+            <div class="float">${fmt(s.float)}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      ${craft.items.length === REQUIRED ? `
+        <div class="confirm-wrap">
+          <button class="btn-confirm" id="confirmCraftBtn">Confirm Craft</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  if(craft.items.length === REQUIRED){
+    document.getElementById('confirmCraftBtn').addEventListener('click', confirmCraft);
+  }
+}
+
+function toggleCustomSkin(uid){
+  if(CRAFT_MODE !== 'custom') return;
+
+  if(customSelectedIds.has(uid)){
+    customSelectedIds.delete(uid);
+  } else {
+    if(customSelectedIds.size >= REQUIRED){
+      alert('You can select a maximum of 20 items for a custom craft.');
+      return;
+    }
+    customSelectedIds.add(uid);
+  }
+
+  renderCustomCraft();
+}
+
+window.toggleCustomSkin = toggleCustomSkin;
+
+function confirmCraft(){
+  if(!currentCraft || !currentCraft.items || currentCraft.items.length !== REQUIRED) return;
+
+  const usedIds = new Set(currentCraft.items.map(s => s.uid));
+  const before = skins.length;
+  skins = sortSkins(skins.filter(s => !usedIds.has(s.uid)));
+  const removed = before - skins.length;
+
+  if(removed !== REQUIRED){
+    alert(`Removed ${removed} of ${REQUIRED} items. The list was changed after calculation.`);
+  }
+
+  currentCraft = null;
+  customSelectedIds.clear();
+  saveStorage();
+  renderSkins();
+  duplicateResults.innerHTML = '';
+
+  results.innerHTML = `
+    <div class="empty">
+      Craft confirmed. Used items were removed from the list on the right.<br>
+      Skins remaining: ${skins.length}.
+    </div>`;
+}
+
+function renderCraft(craft){
+  currentCraft = craft || null;
+  renderSkins();
+
+  if(!craft){
+    results.innerHTML = `<div class="empty">No valid set of 20 skins found with total ≤ ${TARGET.toFixed(2)}.</div>`;
+    return;
+  }
+
+  const remain = TARGET - craft.sum;
+
+  const craftChances = new Map();
+  craft.items.forEach(s => {
+    const key = s.craftResult || 'Unknown craft';
+    craftChances.set(key, (craftChances.get(key) || 0) + 1);
+  });
+
+  const chanceHtml = Array.from(craftChances.entries())
+    .sort((a,b)=>b[1]-a[1])
+    .map(([name,count]) => `
+      <div class="stat">
+        <div class="label">${esc(name)}</div>
+        <div class="value">${(count / REQUIRED * 100).toFixed(0)}%</div>
+        <div class="craft-meta">${count} of ${REQUIRED} items</div>
+      </div>
+    `).join('');
+
+  results.innerHTML = `
+    <div class="stats" style="grid-template-columns:repeat(${Math.min(Math.max(craftChances.size,1),3)},1fr)">
+      ${chanceHtml}
+    </div>
+
+    <div class="craft-card">
+      <div class="craft-head">
+        <div>
+          <div class="craft-name">${CRAFT_MODE === 'collections' ? 'Craft — More Collections' : 'Best Craft Found'}</div>
+          <div class="craft-meta">
+            20 / 20 items · remaining to ${TARGET.toFixed(2)}: ${Math.max(0,remain).toFixed(9)}
+            ${CRAFT_MODE === 'collections' ? ` · priority items: ${craft.preferredCount}/20` : ''}
+          </div>
+        </div>
+        <div class="craft-sum">${craft.sum.toFixed(9)}</div>
+      </div>
+      <div class="craft-items">
+        ${craft.items.map((s,i)=>`
+          <div class="craft-row" style="grid-template-columns:32px 1fr 1fr 150px">
+            <div class="num">${i+1}</div>
+            <div>${esc(s.name)}</div>
+            <div>
+              <div>${esc(s.craftResult || '—')}</div>
+              ${s.collection ? `<div class="subtitle">${esc(s.collection)}</div>` : ''}
+            </div>
+            <div class="float">${fmt(s.float)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="confirm-wrap">
+        <button class="btn-confirm" id="confirmCraftBtn">Confirm Craft</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('confirmCraftBtn').addEventListener('click', confirmCraft);
+}
+
+document.querySelectorAll('input[name="craftMode"]').forEach(radio=>{
+  radio.addEventListener('change', ()=>{
+    CRAFT_MODE = document.querySelector('input[name="craftMode"]:checked').value;
+    currentCraft = null;
+
+    if(CRAFT_MODE === 'custom'){
+      targetStat.classList.add('hidden');
+      craftHint.style.display = 'none';
+      document.getElementById('findBtn').style.display = 'none';
+      renderCustomCraft();
+    } else {
+      targetStat.classList.remove('hidden');
+      craftHint.style.display = '';
+      document.getElementById('findBtn').style.display = '';
+      customSelectedIds.clear();
+      renderSkins();
+      results.innerHTML = '<div class="empty">Mode changed. Click “Calculate” to recalculate the craft.</div>';
+    }
+  });
+});
+
+function applyTargetValue(value){
+  const min = Number(targetSlider.min);
+  const max = Number(targetSlider.max);
+  const step = Number(targetSlider.step) || 0.01;
+
+  const clamped = Math.min(max, Math.max(min, value));
+  const rounded = Math.round(clamped / step) * step;
+
+  targetSlider.value = rounded.toFixed(2);
+  TARGET = Number(targetSlider.value);
+  targetValue.textContent = TARGET.toFixed(2);
+
+  currentCraft = null;
+  renderSkins();
+  results.innerHTML = '<div class="empty">Limit changed. Click “Calculate” to recalculate the craft.</div>';
+}
+
+function stepTarget(direction){
+  if(CRAFT_MODE === 'custom') return;
+  const step = Number(targetSlider.step) || 0.01;
+  applyTargetValue(Number(targetSlider.value) + direction * step);
+}
+
+function bindHoldStep(button, direction){
+  let holdTimeout = null;
+  let holdInterval = null;
+
+  const stop = ()=>{
+    if(holdTimeout !== null){
+      clearTimeout(holdTimeout);
+      holdTimeout = null;
+    }
+    if(holdInterval !== null){
+      clearInterval(holdInterval);
+      holdInterval = null;
+    }
+  };
+
+  const start = (e)=>{
+    e.preventDefault();
+    stop();
+
+    // Immediate first step, same as one keyboard press.
+    stepTarget(direction);
+
+    // Delay before auto-repeat, similar to keyboard key repeat.
+    holdTimeout = setTimeout(()=>{
+      holdInterval = setInterval(()=>{
+        stepTarget(direction);
+      }, 55);
+    }, 350);
+  };
+
+  button.addEventListener('pointerdown', start);
+  button.addEventListener('pointerup', stop);
+  button.addEventListener('pointercancel', stop);
+  button.addEventListener('pointerleave', stop);
+  button.addEventListener('contextmenu', e=>e.preventDefault());
+}
+
+bindHoldStep(targetMinusBtn, -1);
+bindHoldStep(targetPlusBtn, 1);
+
+targetSlider.addEventListener('input', ()=>{
+  if(CRAFT_MODE === 'custom') return;
+  TARGET = Number(targetSlider.value);
+  targetValue.textContent = TARGET.toFixed(2);
+  currentCraft = null;
+  renderSkins();
+  results.innerHTML = '<div class="empty">Limit changed. Click “Calculate” to recalculate the craft.</div>';
+});
+
+document.getElementById('findBtn').addEventListener('click', ()=>{
+  if(CRAFT_MODE === 'custom'){
+    renderCustomCraft();
+    return;
+  }
+  if(skins.length < REQUIRED){
+    results.innerHTML = `<div class="empty">Currently added: ${skins.length}. At least 20 skins are required for a craft.</div>`;
+    return;
+  }
+
+  currentCraft = null;
+  renderSkins();
+  results.innerHTML = '<div class="empty">Calculating…</div>';
+
+  // Let the browser repaint before the calculation.
+  setTimeout(()=>{
+    const craft = findBestCraft(skins);
+    renderCraft(craft);
+  },10);
+});
+
+renderSkins();
+renderTimers();
+if(CRAFT_MODE === 'custom') renderCustomCraft();
+setInterval(tickTimers, 250);
+</script>
+</body>
+</html>
