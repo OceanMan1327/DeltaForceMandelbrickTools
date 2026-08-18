@@ -287,6 +287,91 @@ button:hover{transform:translateY(-1px)}
   accent-color:var(--accent);
   cursor:pointer;
 }
+
+.priority-panel{
+  display:none;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:14px;
+  margin-bottom:15px;
+}
+.priority-panel.show{display:block}
+.priority-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.priority-title{
+  font-size:14px;
+  font-weight:800;
+}
+.priority-subtitle{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:12px;
+}
+.priority-actions{
+  display:flex;
+  gap:6px;
+}
+.priority-mini-btn{
+  padding:6px 10px;
+  border-radius:7px;
+  background:#292e36;
+  color:var(--text);
+  border:1px solid #363d47;
+  font-size:12px;
+}
+.priority-mini-btn:hover{
+  background:#333943;
+  color:var(--accent2);
+}
+.priority-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.priority-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid #303640;
+  border-radius:9px;
+  background:#171b21;
+  cursor:pointer;
+  transition:.12s ease;
+}
+.priority-item:hover{
+  border-color:#444c58;
+  background:#1b2027;
+}
+.priority-item.checked{
+  border-color:rgba(251,94,15,.40);
+  background:rgba(251,94,15,.08);
+}
+.priority-item input{
+  width:16px;
+  height:16px;
+  margin:0;
+  accent-color:var(--accent);
+  flex:0 0 auto;
+}
+.priority-item-text{
+  min-width:0;
+  font-size:13px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+@media(max-width:1100px){
+  .priority-grid{grid-template-columns:1fr}
+}
+
 .mode-box{
   display:flex;
   gap:10px;
@@ -715,7 +800,7 @@ button:hover{transform:translateY(-1px)}
           <input type="radio" name="craftMode" value="collections">
           <div>
             <div class="mode-title">More Collections</div>
-            <div class="mode-desc">Maximize items outside Medusa, Custom Build, and Astromancy, then maximize the total.</div>
+            <div class="mode-desc">Maximize items from selected priority collections, then maximize the total.</div>
           </div>
         </label>
 
@@ -742,6 +827,20 @@ button:hover{transform:translateY(-1px)}
           </div>
           <input id="targetSlider" class="target-slider" type="range" min="8" max="23" step="0.01" value="8.50">
         </div>
+      </div>
+
+      <div class="priority-panel" id="priorityPanel">
+        <div class="priority-panel-head">
+          <div>
+            <div class="priority-title">Priority Collections</div>
+            <div class="priority-subtitle">Checked collections are prioritized in More Collections mode.</div>
+          </div>
+          <div class="priority-actions">
+            <button type="button" class="priority-mini-btn" id="priorityAllBtn">All</button>
+            <button type="button" class="priority-mini-btn" id="priorityNoneBtn">None</button>
+          </div>
+        </div>
+        <div class="priority-grid" id="priorityGrid"></div>
       </div>
 
       <div class="hint" id="craftHint">
@@ -954,6 +1053,10 @@ const targetStat = document.getElementById('targetStat');
 const craftHint = document.getElementById('craftHint');
 const targetMinusBtn = document.getElementById('targetMinusBtn');
 const targetPlusBtn = document.getElementById('targetPlusBtn');
+const priorityPanel = document.getElementById('priorityPanel');
+const priorityGrid = document.getElementById('priorityGrid');
+const priorityAllBtn = document.getElementById('priorityAllBtn');
+const priorityNoneBtn = document.getElementById('priorityNoneBtn');
 const duplicateResults = document.getElementById('duplicateResults');
 
 const timerGrid = document.getElementById('timerGrid');
@@ -975,7 +1078,59 @@ enhanceCustomSelect(timerSkinSelect);
 let CRAFT_MODE = 'quality';
 let currentCraft = null;
 let customSelectedIds = new Set();
-const EXCLUDED_COLLECTIONS = new Set(['medusa','custom-build','astromancy']);
+
+// Default selection preserves the previous More Collections behavior.
+let priorityCollectionIds = new Set(
+  MANDEL_COLLECTIONS
+    .filter(c => !['medusa','custom-build','astromancy'].includes(c.id))
+    .map(c => c.id)
+);
+
+function renderPriorityCollections(){
+  priorityGrid.innerHTML = MANDEL_COLLECTIONS.map(c => {
+    const checked = priorityCollectionIds.has(c.id);
+    const weapons = getCollectionWeapons(c);
+    return `
+      <label class="priority-item ${checked ? 'checked' : ''}">
+        <input
+          type="checkbox"
+          value="${esc(c.id)}"
+          ${checked ? 'checked' : ''}
+        >
+        <span class="priority-item-text">${esc(c.name)} — ${esc(weapons)}</span>
+      </label>
+    `;
+  }).join('');
+
+  priorityGrid.querySelectorAll('.priority-item input').forEach(input => {
+    input.addEventListener('change', () => {
+      if(input.checked) priorityCollectionIds.add(input.value);
+      else priorityCollectionIds.delete(input.value);
+
+      input.closest('.priority-item')?.classList.toggle('checked', input.checked);
+
+      if(CRAFT_MODE === 'collections'){
+        currentCraft = null;
+        renderSkins();
+        results.innerHTML = '<div class="empty">Priority collections changed. Click “Calculate” to recalculate the craft.</div>';
+      }
+    });
+  });
+}
+
+function setAllPriorityCollections(enabled){
+  priorityCollectionIds = enabled
+    ? new Set(MANDEL_COLLECTIONS.map(c => c.id))
+    : new Set();
+
+  renderPriorityCollections();
+
+  if(CRAFT_MODE === 'collections'){
+    currentCraft = null;
+    renderSkins();
+    results.innerHTML = '<div class="empty">Priority collections changed. Click “Calculate” to recalculate the craft.</div>';
+  }
+}
 
 function sortSkins(list){
   return [...list].sort((a,b) => {
@@ -1579,7 +1734,7 @@ function findBestCraft(items){
 
   const targetUnits = BigInt(Math.round(TARGET * SCALE));
   const units = items.map(item => BigInt(Math.round(item.float * SCALE)));
-  const preferred = items.map(item => EXCLUDED_COLLECTIONS.has(item.collectionId || '') ? 0 : 1);
+  const preferred = items.map(item => priorityCollectionIds.has(item.collectionId || '') ? 1 : 0);
 
   const mid = Math.floor(items.length / 2);
   const leftIdx = Array.from({length: mid}, (_,i)=>i);
@@ -1718,7 +1873,7 @@ function findBestCraft(items){
     items: chosen,
     sum: chosen.reduce((a,b)=>a+b.float,0),
     quantizedSum: Number(bestSum) / SCALE,
-    preferredCount: chosen.filter(s => !EXCLUDED_COLLECTIONS.has(s.collectionId || '')).length
+    preferredCount: chosen.filter(s => priorityCollectionIds.has(s.collectionId || '')).length
   };
 }
 
@@ -1727,7 +1882,7 @@ function buildCustomCraft(){
   return {
     items: chosen,
     sum: chosen.reduce((a,b)=>a + Number(b.float), 0),
-    preferredCount: chosen.filter(s => !EXCLUDED_COLLECTIONS.has(s.collectionId || '')).length,
+    preferredCount: chosen.filter(s => priorityCollectionIds.has(s.collectionId || '')).length,
     custom: true
   };
 }
@@ -1886,7 +2041,7 @@ function renderCraft(craft){
           <div class="craft-name">${CRAFT_MODE === 'collections' ? 'Craft — More Collections' : 'Best Craft Found'}</div>
           <div class="craft-meta">
             20 / 20 items · remaining to ${TARGET.toFixed(2)}: ${Math.max(0,remain).toFixed(9)}
-            ${CRAFT_MODE === 'collections' ? ` · priority items: ${craft.preferredCount}/20` : ''}
+            ${CRAFT_MODE === 'collections' ? ` · prioritized items: ${craft.preferredCount}/20` : ''}
           </div>
         </div>
         <div class="craft-sum">${craft.sum.toFixed(9)}</div>
@@ -1913,10 +2068,17 @@ function renderCraft(craft){
   document.getElementById('confirmCraftBtn').addEventListener('click', confirmCraft);
 }
 
+priorityAllBtn.addEventListener('click', ()=>setAllPriorityCollections(true));
+priorityNoneBtn.addEventListener('click', ()=>setAllPriorityCollections(false));
+
+renderPriorityCollections();
+
 document.querySelectorAll('input[name="craftMode"]').forEach(radio=>{
   radio.addEventListener('change', ()=>{
     CRAFT_MODE = document.querySelector('input[name="craftMode"]:checked').value;
     currentCraft = null;
+
+    priorityPanel.classList.toggle('show', CRAFT_MODE === 'collections');
 
     if(CRAFT_MODE === 'custom'){
       targetStat.classList.add('hidden');
